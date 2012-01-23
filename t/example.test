@@ -1,7 +1,7 @@
 Feature: Google front page allows me to search
-In order to be stuck without being able to google something
-As an curious person
-I want to be able to search stuff online
+In order not to be stuck without being able to google something
+As a curious person
+I want to be check that Google is available
 
 Scenario: Google frontpage is available
   Given the HTTP request header "Accept-Language" is "en"
