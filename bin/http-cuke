@@ -105,6 +105,7 @@ use strict;
 use warnings;
 
 use Carp ();
+use File::Spec ();
 use File::Slurp ();
 use Getopt::Long ();
 use Test::More;
@@ -134,7 +135,7 @@ sub tests_list {
 
 sub load_test_feature {
     my ($feature_file) = @_;
-    $feature_file = "$Bin/../t/$feature_file";
+
     if (! -e $feature_file) {
         Carp::croak("Can't find test file '$feature_file'");
     }
@@ -168,7 +169,7 @@ if (! @test) {
 
 for (@test) {
     #warn "# Loading test $_\n";
-    my $feature = load_test_feature($_);
+    my $feature = load_test_feature(File::Spec->catfile($test_dir, $_));
     Test::Cukes::feature($feature);
     my ($name) = $feature =~ m{Feature: (.+)$}gm;
     diag($feature);
