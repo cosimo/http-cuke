@@ -1,0 +1,152 @@
+=head1 NAME
+
+http-cuke - Cucumber-style HTTP testing for the masses
+
+=head1 SYNOPSIS
+
+Example of test scenario:
+
+    Feature: Front page responds correctly
+    In order to avoid problems with caching logic and/or frontend configuration
+    As an operations ninja
+    I want to check that front page is served correctly and the frontends configuration is correct
+
+    Scenario: HTTP to HTTPS redirects are in place
+      When I go to "http://my.example.server.lan/"
+      Then I should be redirected to "https://my.example.server.lan/"
+      Then the final HTTP status code should be "200"
+
+Put that text in a C<whatever.test> file, and point
+C<http-cuke> to the directory that contains it with:
+
+    http-cuke --test-dir ./some-tests
+
+=head1 DESCRIPTION
+
+Run cucumber style tests against any HTTP server.
+
+If you are not familiar with cucumber, check it out
+at L<http://cukes.info/>.
+
+With this tool you can define set of tests (or B<features>
+and B<scenarios> in cucumber-speak) and run them.
+
+Within each test you can check redirects, response bodies,
+inject custom HTTP headers, check Varnish responses, and more.
+
+=head1 MOTIVATION
+
+B<Why did I write this?>
+
+This tool is not meant to replace tools like C<WWW::Mechanize>
+or similar ones. It is meant to perform automated testing
+for frontends configuration testing.
+
+By frontend I mean Apache, Nginx, Varnish, and deadly
+combinations of the three. It can be a nightmare to make
+sure you have all the correct redirects in place, that
+pages are cached according to your own logic, etc...
+
+Yes, but even then, after all, cucumber is pretty well established.
+So why?
+
+Because of the dependencies mess. I don't want to depend
+on too many packages, and Perl already has all the tools
+we need to do this.
+
+You just glue them together, and you have a TAP-compliant
+cucumber-style HTTP testing.
+
+The B<main advantage of this tool> is that it opens up even
+complex HTTP testing to a broader audience, not necessarily
+programmers. That is, btw, the whole point of BDD testing,
+and that's B<GOOD>.
+
+=head1 AVAILABLE TESTS
+
+So what are the B<magic words> that are available to build
+the test cases?
+
+Here's a list:
+
+=over 4
+
+=item C<Given a max of (\d+) redirects>
+
+=item C<Given a timeout of (\d+) seconds>
+
+=item C<Given a "(.+)" user agent>
+
+=item C<Given the HTTP request header "(.+)" is "(.*)">
+
+=item C<When I go to "(.+)">
+
+=item C<Then the page should be cached>
+
+=item C<Then the page should not be cached>
+
+=item C<Then I should be redirected to "(.+)">
+
+=item C<Then the HTTP status code should be "(.+)">
+
+=item C<Then the HTTP status line should match "(.+)">
+
+=item C<Then the page shouldn't contain "(.+)">
+
+=item C<Then the page should contain "(.+)">
+
+=back
+
+
+=cut
+
+=head1 AUTHOR
+
+Cosimo Streppone, C<< <cosimo@opera.com> >>
+
+=head1 LICENSE AND COPYRIGHT
+
+This code is offered under the Open Source BSD license.
+
+Copyright (c) 2012, Opera Software. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+=over 4
+
+=item
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+
+=item
+
+Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+
+=item
+
+Neither the name of Opera Software nor the names of its contributors may
+be used to endorse or promote products derived from this software without
+specific prior written permission.
+
+=back
+
+=head1 DISCLAIMER OF WARRANTY
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+=cut
+

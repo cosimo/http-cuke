@@ -1,0 +1,11 @@
+Feature: Google front page allows me to search
+In order to be stuck without being able to google something
+As an curious person
+I want to be able to search stuff online
+
+Scenario: Google frontpage is available
+  Given the HTTP request header "Accept-Language" is "en"
+  When I go to "http://www.google.com/"
+  Then the final HTTP status code should be "200"
+  Then the page should contain "Google"
+
