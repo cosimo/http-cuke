@@ -130,9 +130,7 @@ sub check_redirects_chain_for {
                 last;
             }
         }
-        ok($found_redir,
-            "  Redirect to \"$expected_url\" was " . ($found_redir?'':'not ') . 'found'
-        );
+        return $found_redir;
     }
     return;
 }
@@ -178,7 +176,14 @@ Then qr{the page should not be cached}, sub {
 Then qr{I should be redirected to "(.+)"}, sub {
     my $url = $1;
     #diag("Matching redirect chain for '$url'");
-    return check_redirects_chain_for($stash, $url);
+    my $found_redir = check_redirects_chain_for($stash, $url);
+    ok($found_redir, qq{  Redirect to "$url" was found});
+};
+
+Then qr{I shouldn't be redirected to "(.+)"}, sub {
+    my $url = $1;
+    my $found_redir = check_redirects_chain_for($stash, $url);
+    ok(! $found_redir, qq{  Redirect to "$url" was not found});
 };
 
 Then qr{the (?:final )HTTP status code should be "(.+)"}, sub {
@@ -196,7 +201,7 @@ Then qr{the HTTP status line should match "(.+)"}, sub {
 Then qr{the page shouldn't contain "(.+)"}, sub {
     my $unwanted_string = $1;
     my $found = page_content_contains($stash, $unwanted_string);
-    ok(!$found, "String '$unwanted_string' was not found in the page")
+    ok(!$found, "  String '$unwanted_string' was not found in the page")
         or diag("Page content: ".$stash->{res}->content);
 };
 
@@ -204,7 +209,7 @@ Then qr{the page shouldn't contain "(.+)"}, sub {
 Then qr{the page should contain "(.+)"}, sub {
     my $wanted_string = $1;
     my $found = page_content_contains($stash, $wanted_string);
-    ok($found, "String '$wanted_string' was found in the page")
+    ok($found, "  String '$wanted_string' was found in the page")
         or diag("Page content: ".$stash->{res}->content);
 };
 
