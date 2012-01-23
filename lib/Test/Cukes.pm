@@ -19,7 +19,10 @@ sub feature {
     my $caller = caller;
     my $text = shift;
 
-    $feature->{$caller} = Test::Cukes::Feature->new($text)
+    $feature->{$caller} ||= [];
+    push @{ $feature->{$caller} }, Test::Cukes::Feature->new($text);
+
+    return $feature->{$caller};
 }
 
 sub runtests {
@@ -27,58 +30,62 @@ sub runtests {
     my $feature_text = shift;
 
     if ($feature_text) {
-        $feature->{$caller} = Test::Cukes::Feature->new($feature_text);
+        $feature->{$caller} = [ Test::Cukes::Feature->new($feature_text) ];
     }
 
-    my @scenarios_of_caller = @{$feature->{$caller}->scenarios};
+    for my $f (@{ $feature->{$caller} }) {
 
-    for my $scenario (@scenarios_of_caller) {
+        my @scenarios_of_caller = @{$f->scenarios};
 
-        my $skip = 0;
-        my $skip_reason = "";
-        my $gwt;
+        for my $scenario (@scenarios_of_caller) {
+
+            my $skip = 0;
+            my $skip_reason = "";
+            my $gwt;
 
 
-        for my $step_text (@{$scenario->steps}) {
+            for my $step_text (@{$scenario->steps}) {
 
-            my ($pre, $step) = split " ", $step_text, 2;
-            if ($skip) {
-                Test::Cukes->builder->skip($step_text);
-                next;
-            }
+                my ($pre, $step) = split " ", $step_text, 2;
+                if ($skip) {
+                    Test::Cukes->builder->skip($step_text);
+                    next;
+                }
 
-            $gwt = $pre if $pre =~ /(Given|When|Then)/;
+                $gwt = $pre if $pre =~ /(Given|When|Then)/;
 
-            my $found_step = 0;
-            for my $step_pattern (keys %$steps) {
-                my $cb = $steps->{$step_pattern}->{code};
+                my $found_step = 0;
+                for my $step_pattern (keys %$steps) {
+                    my $cb = $steps->{$step_pattern}->{code};
 
-                if (my (@matches) = $step =~ m/$step_pattern/) {
-                    my $ok = 1;
-                    try {
-                        $cb->(@matches);
-                    } catch {
-                        $ok = 0;
-                    };
+                    if (my (@matches) = $step =~ m/$step_pattern/) {
+                        my $ok = 1;
+                        try {
+                            $cb->(@matches);
+                        } catch {
+                            $ok = 0;
+                        };
 
-                    Test::Cukes->builder->ok($ok, $step_text);
+                        Test::Cukes->builder->ok($ok, $step_text);
 
-                    if ($skip == 0 && !$ok) {
-                        Test::Cukes->builder->diag($@);
-                        $skip = 1;
-                        $skip_reason = "Failed: $step_text";
+                        if ($skip == 0 && !$ok) {
+                            Test::Cukes->builder->diag($@);
+                            $skip = 1;
+                            $skip_reason = "Failed: $step_text";
+                        }
+
+                        $found_step = 1;
+                        last;
                     }
+                }
 
-                    $found_step = 1;
-                    last;
+                unless($found_step) {
+                    $step_text =~ s/^And /$gwt /;
+                    push @missing_steps, $step_text;
                 }
             }
-
-            unless($found_step) {
-                $step_text =~ s/^And /$gwt /;
-                push @missing_steps, $step_text;
-            }
         }
+
     }
 
     # If the user doesn't specify tests explicitly when they use Test::Cukes;,
