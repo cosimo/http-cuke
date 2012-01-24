@@ -85,7 +85,7 @@ Here's a list:
 
 =item C<Given the HTTP request header "(.+)" is "(.*)">
 
-=item C<Given the clients sends a cookie "(.+)" with value "(.*)">
+=item C<Given the client sends a cookie "(.+)" with value "(.*)">
 
 =item C<When I go to "(.+)">
 
@@ -99,7 +99,7 @@ Here's a list:
 
 =item C<Then the HTTP status line should match "(.+)">
 
-=item C<Then the page shouldn't contain "(.+)">
+=item C<Then the page should not contain "(.+)">
 
 =item C<Then the server should send a CSRF token>
 
