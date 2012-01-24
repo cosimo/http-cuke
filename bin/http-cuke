@@ -145,8 +145,8 @@ if (! @test) {
 for (@test) {
     my $feature = load_test_feature($_);
     Test::Cukes::feature($feature);
-    diag($feature);
-    diag("-" x 60);
+    #diag($feature);
+    #diag("-" x 60);
 }
 
 Test::Cukes::runtests();
