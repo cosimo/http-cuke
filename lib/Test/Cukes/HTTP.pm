@@ -2,16 +2,19 @@ package Test::Cukes::HTTP;
 
 use strict;
 use warnings;
+
+use HTTP::Cookies ();
 use LWP::UserAgent ();
 use Test::Cukes;
 use Test::More;
+use URI ();
 
 our $VERSION = "0.01";
 
 use constant {
     DEFAULT_TIMEOUT       => 60,
     DEFAULT_MAX_REDIRECTS => 5,
-    DEFAULT_USER_AGENT    => "Test::Cukes::HTTP/0.01",
+    DEFAULT_USER_AGENT    => q{http-cuke/0.01},
 };
 
 our $stash = {
@@ -20,11 +23,23 @@ our $stash = {
 };
 
 sub get_useragent {
-    my $ua = $stash->{agent} ||= LWP::UserAgent->new(
-        agent => DEFAULT_USER_AGENT,
+
+    my $ua;
+
+    if ($ua = $stash->{agent}) {
+        return $ua;
+    }
+
+    $ua = $stash->{agent} ||= LWP::UserAgent->new(
+        agent        => DEFAULT_USER_AGENT,
         max_redirect => DEFAULT_MAX_REDIRECTS,
-        timeout => DEFAULT_TIMEOUT,
+        timeout      => DEFAULT_TIMEOUT,
     );
+
+    # Make sure cookies are kept through requests
+    my $jar = HTTP::Cookies->new();
+    $ua->cookie_jar($jar);
+
     return $ua;
 }
 
@@ -33,11 +48,26 @@ sub do_request {
     $stash->{url} = $url;
     my $ua = get_useragent();
     my $req = HTTP::Request->new("GET" => $url);
+
     if (my $headers = $stash->{request}->{headers}) {
         $req->header($_ => $headers->{$_}) for keys %{$headers};
     }
+
+    if (my $cookies = $stash->{request}->{cookies}) {
+        my $host = URI->new($url)->host;
+        for (@{ $cookies }) {
+            my ($name, $value, $path) = @{ $_ };
+            $ua->cookie_jar->set_cookie(undef, $name, $value, $path, $host);
+        }
+    }
+
     delete $stash->{request}; # Cleanup for next request
     my $res = $ua->request($req);
+
+    # XXX Should cookies be persistent across requests??
+    # delete them here if not
+    # --------------------------------------------------
+
     return ($stash->{res} = $res);
 }
 
@@ -159,6 +189,14 @@ Given qr{the HTTP request header "(.+)" is "(.*)"}, sub {
     $stash->{request}->{headers}->{$1} = $2;
 };
 
+Given qr{the client sends a cookie "(.+)" with value "(.*)"}, sub {
+    my ($name, $value) = @_;
+    my $path = "/";
+    my $cookies = $stash->{request}->{cookies} ||= [];
+    push @{ $cookies }, [ $name, $value, $path ];
+    return;
+};
+
 When qr{I go to "(.+)"}, sub {
     my $url = $1;
     $stash->{url} = $url;
@@ -180,7 +218,7 @@ Then qr{I should be redirected to "(.+)"}, sub {
     ok($found_redir, qq{  Redirect to "$url" was found});
 };
 
-Then qr{I shouldn't be redirected to "(.+)"}, sub {
+Then qr{I should not be redirected to "(.+)"}, sub {
     my $url = $1;
     my $found_redir = check_redirects_chain_for($stash, $url);
     ok(! $found_redir, qq{  Redirect to "$url" was not found});
@@ -191,6 +229,22 @@ Then qr{the (?:final )HTTP status code should be "(.+)"}, sub {
     return check_status_code($stash, $http_status);
 };
 
+Then qr{the server should send a CSRF token}, sub {
+    my $res = $stash->{res};
+    my @cookies = $res->headers->header("Set-Cookie");
+    #use Data::Dumper;
+    #diag(Dumper(\@cookies));
+    my $found_csrf = 0;
+    for (@cookies) {
+        # Django default format
+        if (m{^csrftoken\s*=\s*(.+?);}) {
+            $found_csrf = $1;
+            last;
+        }
+    }
+    ok($found_csrf, "  CSRF token was found ($found_csrf)");
+};
+
 Then qr{the HTTP status line should match "(.+)"}, sub {
     my $http_status = quotemeta($1);
     my $http_status_re = qr{$http_status};
@@ -198,7 +252,7 @@ Then qr{the HTTP status line should match "(.+)"}, sub {
 };
 
 # Then the page does not contain "We are sorry"
-Then qr{the page shouldn't contain "(.+)"}, sub {
+Then qr{the page should not contain "(.+)"}, sub {
     my $unwanted_string = $1;
     my $found = page_content_contains($stash, $unwanted_string);
     ok(!$found, "  String '$unwanted_string' was not found in the page")
