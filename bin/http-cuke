@@ -23,6 +23,10 @@ C<http-cuke> to the directory that contains it with:
 
     http-cuke --test-dir ./some-tests
 
+Or run just a single test file:
+
+    http-cuke --test ./single.test
+
 =head1 DESCRIPTION
 
 Run cucumber style tests against any HTTP server.
@@ -81,6 +85,8 @@ Here's a list:
 
 =item C<Given the HTTP request header "(.+)" is "(.*)">
 
+=item C<Given the clients sends a cookie "(.+)" with value "(.*)">
+
 =item C<When I go to "(.+)">
 
 =item C<Then the page should be cached>
@@ -94,6 +100,8 @@ Here's a list:
 =item C<Then the HTTP status line should match "(.+)">
 
 =item C<Then the page shouldn't contain "(.+)">
+
+=item C<Then the server should send a CSRF token>
 
 =item C<Then the page should contain "(.+)">
 
@@ -123,10 +131,7 @@ sub tests_list {
     }
     my @features;
     if (opendir my $f_dir, $features_dir) {
-        @features =
-            map { File::Basename::basename($_) }
-            grep { $_ =~ m(^ .+ \. test $)x }
-            readdir $f_dir;
+        @features = grep { $_ =~ m(^ .+ \. test $)x } readdir $f_dir;
         closedir $f_dir;
     }
 
@@ -153,25 +158,36 @@ sub load_test_feature {
 }
 
 Getopt::Long::GetOptions(
-    'test-dir=s' => \my $test_dir,
+    'test-dir:s' => \my $test_dir,
+    'test:s'     => \my $test_file,
 );
 
-if (! $test_dir) {
-    warn "Usage: $0 --test-dir <your-test-cases-dir>\n\n";
+if (! $test_dir && ! $test_file) {
+    warn "Usage: $0 [--test-dir <your-test-cases-dir>] [--test <single-test-file>]\n\n";
     warn "You need to specify a test directory where to load test cases from\n";
+    warn "or a single test file to be run\n";
     exit 1;
 }
 
-my @test = tests_list($test_dir);
+my @test;
+
+# Load a single test file
+if ($test_file) {
+    @test = ($test_file);
+}
+
+# Or an entire folder
+elsif ($test_dir) {
+    @test = tests_list($test_dir);
+}
+
 if (! @test) {
     die "No tests to run. Sure you have some *.test files in $test_dir?";
 }
 
 for (@test) {
-    #warn "# Loading test $_\n";
-    my $feature = load_test_feature(File::Spec->catfile($test_dir, $_));
+    my $feature = load_test_feature($_);
     Test::Cukes::feature($feature);
-    my ($name) = $feature =~ m{Feature: (.+)$}gm;
     diag($feature);
     diag("-" x 60);
 }
