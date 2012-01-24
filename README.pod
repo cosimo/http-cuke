@@ -1,6 +1,6 @@
 =head1 NAME
 
-http-cuke - Cucumber-style HTTP testing for the masses
+http-cuke - Cucumber-style HTTP configuration testing for the masses
 
 =head1 SYNOPSIS
 
@@ -21,6 +21,29 @@ C<http-cuke> to the directory that contains it with:
 
     http-cuke --test-dir ./some-tests
 
+Or run just a single test file:
+
+    http-cuke --test ./single.test
+
+Have a look at the C<tests> directory where you will
+find this example:
+
+    Feature: Google front page allows me to search
+    In order not to be stuck without being able to google something
+    As a curious person
+    I want to be check that Google is available
+
+    Scenario: Google frontpage is available
+      Given the HTTP request header "Accept-Language" is "en"
+      When I go to "http://www.google.com/"
+      Then the final HTTP status code should be "200"
+      Then the page should contain "Google"
+
+This is a test you can actually run with:
+
+    cd bin
+    ./http-cuke --test ../tests/example.test
+
 =head1 DESCRIPTION
 
 Run cucumber style tests against any HTTP server.
@@ -31,14 +54,20 @@ at L<http://cukes.info/>.
 With this tool you can define set of tests (or B<features>
 and B<scenarios> in cucumber-speak) and run them.
 
-Within each test you can check redirects, response bodies,
-inject custom HTTP headers, check Varnish responses, and more.
+The type of tests that C<http-cuke> can help you with
+are those that involve checking a HTTP server configuration,
+behavior or plain responses.
 
-=head1 MOTIVATION
+You can check redirects, response headers, cookies,
+response bodies, inject custom HTTP headers in the requests,
+check Varnish responses, and more.
 
-B<Why did I write this?>
 
-This tool is not meant to replace tools like C<WWW::Mechanize>
+=cut
+
+=head1 MOTIVATION: THE WHY
+
+This tool is B<not> meant to replace tools like C<WWW::Mechanize>
 or similar ones. It is meant to perform automated testing
 for frontends configuration testing.
 
@@ -52,15 +81,14 @@ So why?
 
 Because of the dependencies mess. I don't want to depend
 on too many packages, and Perl already has all the tools
-we need to do this.
-
-You just glue them together, and you have a TAP-compliant
-cucumber-style HTTP testing.
+I needed to do this. I just glued them together, and there
+you have a TAP-compliant cucumber-style HTTP testing that
+I can easily hook up to B<Jenkins>.
 
 The B<main advantage of this tool> is that it opens up even
 complex HTTP testing to a broader audience, not necessarily
 programmers. That is, btw, the whole point of BDD testing,
-and that's B<GOOD>.
+and that's Good(tm).
 
 =head1 AVAILABLE TESTS
 
@@ -79,6 +107,8 @@ Here's a list:
 
 =item C<Given the HTTP request header "(.+)" is "(.*)">
 
+=item C<Given the client sends a cookie "(.+)" with value "(.*)">
+
 =item C<When I go to "(.+)">
 
 =item C<Then the page should be cached>
@@ -91,14 +121,13 @@ Here's a list:
 
 =item C<Then the HTTP status line should match "(.+)">
 
-=item C<Then the page shouldn't contain "(.+)">
+=item C<Then the page should not contain "(.+)">
+
+=item C<Then the server should send a CSRF token>
 
 =item C<Then the page should contain "(.+)">
 
 =back
-
-
-=cut
 
 =head1 AUTHOR
 
