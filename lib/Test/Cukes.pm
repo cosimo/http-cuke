@@ -4,6 +4,7 @@ use warnings;
 use Test::Cukes::Feature;
 use Carp::Assert;
 use Try::Tiny;
+use Test::More ();
 
 use base 'Test::Builder::Module';
 
@@ -35,9 +36,13 @@ sub runtests {
 
     for my $f (@{ $feature->{$caller} }) {
 
+        Test::More::diag(("=" x 60) . "\n*** FEATURE: " . $f->name . "\n" . ("=" x 60));
+
         my @scenarios_of_caller = @{$f->scenarios};
 
         for my $scenario (@scenarios_of_caller) {
+
+            Test::More::diag(("-" x 60) . "\n   SCENARIO: " . $scenario->name . "\n" . ("-" x 60));
 
             my $skip = 0;
             my $skip_reason = "";
