@@ -36,13 +36,21 @@ sub runtests {
 
     for my $f (@{ $feature->{$caller} }) {
 
-        Test::More::diag(("=" x 60) . "\n*** FEATURE: " . $f->name . "\n" . ("=" x 60));
+        Test::More::diag(
+            ("=" x 60) .
+            "\n    FEATURE: " . $f->name . "\n" .
+            ("=" x 60)
+        ) if $ENV{TEST_VERBOSE};
 
         my @scenarios_of_caller = @{$f->scenarios};
 
         for my $scenario (@scenarios_of_caller) {
 
-            Test::More::diag(("-" x 60) . "\n   SCENARIO: " . $scenario->name . "\n" . ("-" x 60));
+            Test::More::diag(
+                ("-" x 60) .
+                "\n   SCENARIO: " . $scenario->name . "\n" .
+                ("-" x 60)
+            ) if $ENV{TEST_VERBOSE};
 
             my $skip = 0;
             my $skip_reason = "";
