@@ -127,6 +127,8 @@ Here's a list:
 
 =item C<Then the page should contain "(.+)">
 
+=item C<Then the page MD5 checksum should be "(.+)">
+
 =back
 
 =head1 AUTHOR

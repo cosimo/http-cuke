@@ -147,22 +147,22 @@ sub check_redirects_chain_for {
     }
     my @redir = $res->redirects;
     if (! @redir) {
-        ok(0);
+        return;
     }
-    else {
-        my $found_redir = 0;
-        for (@redir) {
-            next unless $_;
-            my $uri = $_->header("Location");
-            #diag("Redirect chain: $uri");
-            if ($uri eq $expected_url) {
-                $found_redir = 1;
-                last;
-            }
+
+    my $found_redir = 0;
+
+    for (@redir) {
+        next unless $_;
+        my $uri = $_->header("Location");
+        #diag("Redirect chain: $uri");
+        if ($uri eq $expected_url) {
+            $found_redir = 1;
+            last;
         }
-        return $found_redir;
     }
-    return;
+
+    return $found_redir;
 }
 
 Given qr{(?:i will follow) a max of (\d+) redirects}, sub {
@@ -265,6 +265,16 @@ Then qr{the page should contain "(.+)"}, sub {
     my $found = page_content_contains($stash, $wanted_string);
     ok($found, "  String '$wanted_string' was found in the page")
         or diag("Page content: ".$stash->{res}->content);
+};
+
+# Then the page MD5 checksum should be "f5a3cf5f5891652a2b148d40fb400a84"
+Then qr{the page MD5 checksum should be "(.+)"}, sub {
+    my $correct_md5 = $1;
+    eval { require Digest::MD5; 1 }
+        or fail("Digest::MD5 required to verify MD5 checksums");
+    my $page_content = $stash->{res}->content;
+    my $actual_md5 = Digest::MD5::md5_hex($page_content);
+    is($actual_md5, $correct_md5, "  MD5 checksum of page content is correct");
 };
 
 1;
