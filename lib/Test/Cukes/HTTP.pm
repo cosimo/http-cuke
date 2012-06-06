@@ -9,7 +9,7 @@ use Test::Cukes;
 use Test::More;
 use URI ();
 
-our $VERSION = "0.01";
+our $VERSION = "0.02";
 
 use constant {
     DEFAULT_TIMEOUT       => 60,
@@ -229,6 +229,20 @@ Then qr{the (?:final )HTTP status code should be "(.+)"}, sub {
     return check_status_code($stash, $http_status);
 };
 
+Then qr{the server should send a "(.+)" cookie}, sub {
+    my $res = $stash->{res};
+    my $wanted = $1;
+    my @cookies = $res->headers->header("Set-Cookie");
+    my $found_cookie;
+    for (@cookies) {
+        if (m{^$wanted\s*=\s*(.+?);}) {
+            $found_cookie = $1;
+            last;
+        }
+    }
+    ok(defined $found_cookie,"Cookie $wanted was found ($found_cookie)");
+};
+
 Then qr{the server should send a CSRF token}, sub {
     my $res = $stash->{res};
     my @cookies = $res->headers->header("Set-Cookie");
@@ -236,8 +250,8 @@ Then qr{the server should send a CSRF token}, sub {
     #diag(Dumper(\@cookies));
     my $found_csrf = 0;
     for (@cookies) {
-        # Django default format
-        if (m{^csrftoken\s*=\s*(.+?);}) {
+        # Django default format (or TV Store hack by michalj)
+        if (m{^csrftoken\s*=\s*(.+?);} or m{^xcsrftoken\s*=\s*(.+?);}) {
             $found_csrf = $1;
             last;
         }

@@ -8,7 +8,7 @@ use Test::More ();
 
 use base 'Test::Builder::Module';
 
-our $VERSION = "0.10";
+our $VERSION = "0.11";
 our @EXPORT = qw(feature runtests Given When Then assert affirm should shouldnt);
 
 our @missing_steps = ();
