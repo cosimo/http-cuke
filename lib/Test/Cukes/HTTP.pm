@@ -102,6 +102,26 @@ sub check_cached {
     }
 }
 
+sub check_status_code_isnt {
+    my ($stash, $expected) = @_;
+    my $res = $stash->{res};
+    if (! $res) {
+        return fail("No response object. Maybe you need a 'Given I go to \"<url>\"' first?");
+    }
+    my $status = $res->status_line;
+    if (ref $expected eq "Regexp") {
+        unlike($status => $expected,
+            "  Status line ($status) should not match expected line ($expected)"
+        );
+    }
+    else {
+        my ($status) = $res->status_line =~ m{^(\d+)};
+        isnt($status => $expected,
+            "  Status code should not be $expected (is $status)"
+        );
+    }
+}
+
 sub check_status_code {
     my ($stash, $expected) = @_;
     my $res = $stash->{res};
@@ -222,6 +242,11 @@ Then qr{I should not be redirected to "(.+)"}, sub {
     my $url = $1;
     my $found_redir = check_redirects_chain_for($stash, $url);
     ok(! $found_redir, qq{  Redirect to "$url" was not found});
+};
+
+Then qr{the (?:final )HTTP status code should not be "(.+)"}, sub {
+    my $http_status = $1;
+    return check_status_code_isnt($stash, $http_status);
 };
 
 Then qr{the (?:final )HTTP status code should be "(.+)"}, sub {
