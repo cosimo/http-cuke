@@ -9,17 +9,18 @@ use Test::Cukes;
 use Test::More;
 use URI ();
 
-our $VERSION = "0.02";
+our $VERSION = "0.03";
 
 use constant {
     DEFAULT_TIMEOUT       => 60,
     DEFAULT_MAX_REDIRECTS => 5,
-    DEFAULT_USER_AGENT    => q{http-cuke/0.01},
+    DEFAULT_USER_AGENT    => q{http-cuke/0.03},
 };
 
 our $stash = {
-    agent => undef,
-    url => undef,
+    agent   => undef,
+    url     => undef,
+    request => {},
 };
 
 sub get_useragent {
@@ -50,7 +51,10 @@ sub do_request {
     my $req = HTTP::Request->new("GET" => $url);
 
     if (my $headers = $stash->{request}->{headers}) {
-        $req->header($_ => $headers->{$_}) for keys %{$headers};
+        for my $k (keys %{$headers}) {
+            #diag("Setting header $k to ".$headers->{$k});
+            $req->header($k => $headers->{$k});
+        }
     }
 
     if (my $cookies = $stash->{request}->{cookies}) {
@@ -62,6 +66,7 @@ sub do_request {
     }
 
     delete $stash->{request}; # Cleanup for next request
+
     my $res = $ua->request($req);
 
     # XXX Should cookies be persistent across requests??
@@ -207,6 +212,7 @@ Given qr{a "(.+)" user agent}, sub {
 # Given the HTTP request header "Accept" is "text/html"
 Given qr{the HTTP request header "(.+)" is "(.*)"}, sub {
     $stash->{request}->{headers}->{$1} = $2;
+    #diag("Set request header $1 to $2");
 };
 
 Given qr{the client sends a cookie "(.+)" with value "(.*)"}, sub {
@@ -266,6 +272,32 @@ Then qr{the server should send a "(.+)" cookie}, sub {
         }
     }
     ok(defined $found_cookie,"Cookie $wanted was found ($found_cookie)");
+};
+
+Then qr{the HTTP response header "(.+)" should not be there}, sub {
+    my $res = $stash->{res};
+    my $header = $1;
+    my $value = $res->headers->header($header);
+    is($value, undef,
+        "HTTP response header $header isn't defined");
+};
+
+Then qr{the HTTP response header "(.+)" should be "(.+)"}, sub {
+    my $res = $stash->{res};
+    my $header = $1;
+    my $expected_value = $2 || q{};
+    my $value = $res->headers->header($header) || q{};
+    is($value, $expected_value,
+        "HTTP response header $header value $value is $expected_value");
+};
+
+Then qr{the HTTP response header "(.+)" should match "(.+)"}, sub {
+    my $res = $stash->{res};
+    my $header = $1;
+    my $expected_value = $2;
+    my $value = $res->headers->header($header);
+    ok(index($value, $expected_value) > -1,
+        "HTTP response header $header value $value matched $expected_value");
 };
 
 Then qr{the server should send a CSRF token}, sub {
