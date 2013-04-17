@@ -93,8 +93,8 @@ sub check_cached {
         like($x_varnish, qr{^ (\d+) \s+ (\d+) $}x,
             "  X-Varnish header contains both current and original XID ($x_varnish)"
         );
-        ok(int($age) > 0,
-            "  Age of the cached resource is $age"
+        ok(int($age) >= 0,
+            "  Age of the cached resource is >= 0 ($age)"
         );
     }
     else {
