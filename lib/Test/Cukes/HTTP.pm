@@ -9,7 +9,7 @@ use Test::Cukes;
 use Test::More;
 use URI ();
 
-our $VERSION = "0.03";
+our $VERSION = "0.04";
 
 use constant {
     DEFAULT_TIMEOUT       => 60,

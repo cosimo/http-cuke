@@ -46,6 +46,9 @@ This is a test you can actually run with:
     cd bin
     ./http-cuke --test ../tests/example.test
 
+You can also use B<variables> in your test files.
+See the L<VARIABLES SUPPORT> chapter.
+
 =head1 DESCRIPTION
 
 Run cucumber style tests against any HTTP server.
@@ -63,6 +66,42 @@ behavior or plain responses.
 You can check redirects, response headers, cookies,
 response bodies, inject custom HTTP headers in the requests,
 check Varnish responses, and more.
+
+=head1 VARIABLES SUPPORT
+
+Here's an example of test script in Cucumber style:
+
+    Feature: My service can be monitored correctly by Nagios
+    In order to make sure that Nagios alerts don't fire unnecessarily
+    As an operations ninja
+    I want to verify that the resources accessed by Nagios are always available
+
+    Scenario: ping.html page is served over http
+      When I go to "http://my.server.local/ping.html"
+      Then the final HTTP status code should be "200"
+      Then the page should contain "I am alive"
+
+It is possible (and desirable) to embed variables in your test files.
+In the example above, instead of hardcoding the C<http://my.server.local>
+address, you can use a variable like this:
+
+    Scenario: ping.html page is served over http
+      When I go to "{{ SERVER_URL }}/ping.html"
+      Then the final HTTP status code should be "200"
+      Then the page should contain "I am alive"
+
+To run this test, you need to invoke C<http-cuke> with the C<-D>
+option, to define variables. Example:
+
+    http-cuke --test ./nagios.test -D SERVER_URL=http://my.server.local
+
+If you use variables in your test scripts, but omit to declare them
+when invoking C<http-cuke>, you will be warned with a message:
+
+    Undefined variable 'SERVER_URL' in line:
+
+      When I go to "{{ SERVER_URL }}/ping.html"
+
 
 =cut
 
@@ -96,7 +135,9 @@ sub tests_list {
 }
 
 sub load_test_feature {
-    my ($feature_file) = @_;
+    my ($feature_file, $vars) = @_;
+
+    local $_;
 
     if (! -e $feature_file) {
         Carp::croak("Can't find test file '$feature_file'");
@@ -106,9 +147,17 @@ sub load_test_feature {
 
     # Strip comments, as Test::Cukes doesn't like them
     my @lines;
-    for (@test_feature) {
-        next if m{^ \s* \#}x;
-        push @lines, $_;
+    for my $line (@test_feature) {
+        if ($line =~ m/\{\{ .+ \}\}/x) {
+            $line =~ s/\{\{ \s* (\w+) \s* \}\}/
+                my $v = $vars->{$1};
+                if (! defined $v) {
+                    Carp::croak("Undefined variable '$1' in line:\n\n\t$line\n");
+                };
+                $v/gxe;
+        }
+        next if $line =~ m{^ \s* \#}x;
+        push @lines, $line;
     }
 
     return join("", @lines);
@@ -117,10 +166,11 @@ sub load_test_feature {
 Getopt::Long::GetOptions(
     'test-dir:s' => \my $test_dir,
     'test:s'     => \my $test_file,
+    'D:s'        => \my %variables,
 );
 
 if (! $test_dir && ! $test_file) {
-    warn "Usage: $0 [--test-dir <your-test-cases-dir>] [--test <single-test-file>]\n\n";
+    warn "Usage: $0 [--test-dir <your-test-cases-dir>] [--test <single-test-file>] [-D variable=value] [...]\n\n";
     warn "You need to specify a test directory where to load test cases from\n";
     warn "or a single test file to be run\n";
     exit 1;
@@ -143,7 +193,7 @@ if (! @test) {
 }
 
 for (@test) {
-    my $feature = load_test_feature($_);
+    my $feature = load_test_feature($_, \%variables);
     Test::Cukes::feature($feature);
     #diag($feature);
     #diag("-" x 60);
@@ -205,15 +255,25 @@ Here's a list:
 
 =item C<Then I should be redirected to "(.+)">
 
+=item C<Then I should not be redirected to "(.+)">
+
+=item C<Then the HTTP status code should not be "(.+)">
+
 =item C<Then the HTTP status code should be "(.+)">
+
+=item C<Then the HTTP response header "(.+)" should not be there>
+
+=item C<Then the HTTP response header "(.+)" should be "(.+)">
+
+=item C<Then the HTTP response header "(.+)" should match "(.+)">
 
 =item C<Then the HTTP status line should match "(.+)">
 
 =item C<Then the page should not contain "(.+)">
 
-=item C<Then the server should send a CSRF token>
-
 =item C<Then the page should contain "(.+)">
+
+=item C<Then the server should send a CSRF token>
 
 =item C<Then the page MD5 checksum should be "(.+)">
 
@@ -227,7 +287,7 @@ Cosimo Streppone, C<< <cosimo@opera.com> >>
 
 This code is offered under the Open Source BSD license.
 
-Copyright (c) 2012, Opera Software. All rights reserved.
+Copyright (c) 2012-2013, Opera Software. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
