@@ -4,12 +4,13 @@ use strict;
 use warnings;
 
 use HTTP::Cookies ();
+use JSON ();
 use LWP::UserAgent ();
 use Test::Cukes;
 use Test::More;
 use URI ();
 
-our $VERSION = "0.04";
+our $VERSION = "0.05";
 
 use constant {
     DEFAULT_TIMEOUT       => 60,
@@ -343,6 +344,20 @@ Then qr{the page should contain "(.+)"}, sub {
     my $found = page_content_contains($stash, $wanted_string);
     ok($found, "  String '$wanted_string' was found in the page")
         or diag("Page content: ".$stash->{res}->content);
+};
+
+Then qr{the page (?:is|should be) a valid JSON document}, sub {
+    my $content = $stash->{res}->content;
+    my $is_json = 0;
+    eval {
+        my $json = JSON->new();
+        my $data = $json->decode($content);
+        $is_json = (ref $data eq "ARRAY") || (ref $data eq "HASH");
+    };
+    ok($is_json, "  Page content is a valid JSON document")
+        or diag("Page is not a valid JSON document.\n"
+        . "Exception: $@\n"
+        . "Content: " . $stash->{res}->content);
 };
 
 # Then the page MD5 checksum should be "f5a3cf5f5891652a2b148d40fb400a84"
