@@ -14,14 +14,20 @@ our $VERSION = "0.04";
 use constant {
     DEFAULT_TIMEOUT       => 60,
     DEFAULT_MAX_REDIRECTS => 5,
-    DEFAULT_USER_AGENT    => q{http-cuke/0.03},
+    DEFAULT_USER_AGENT    => qq{http-cuke/0.04},
 };
 
-our $stash = {
-    agent   => undef,
-    url     => undef,
-    request => {},
-};
+our $stash;
+
+sub reset_stash {
+    $stash = {
+        agent   => undef,
+        url     => undef,
+        request => {},
+    };
+}
+
+reset_stash();
 
 sub get_useragent {
 
@@ -288,7 +294,8 @@ Then qr{the HTTP response header "(.+)" should be "(.+)"}, sub {
     my $expected_value = $2 || q{};
     my $value = $res->headers->header($header) || q{};
     is($value, $expected_value,
-        "HTTP response header $header value $value is $expected_value");
+        "HTTP response header $header value $value is $expected_value")
+        or diag("RESPONSE: " . $res->as_string);
 };
 
 Then qr{the HTTP response header "(.+)" should match "(.+)"}, sub {

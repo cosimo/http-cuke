@@ -46,6 +46,8 @@ sub runtests {
 
         for my $scenario (@scenarios_of_caller) {
 
+            eval { Test::Cukes::HTTP::reset_stash() };
+
             Test::More::diag(
                 ("-" x 60) .
                 "\n   SCENARIO: " . $scenario->name . "\n" .
@@ -55,7 +57,6 @@ sub runtests {
             my $skip = 0;
             my $skip_reason = "";
             my $gwt;
-
 
             for my $step_text (@{$scenario->steps}) {
 
