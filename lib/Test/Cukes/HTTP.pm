@@ -72,8 +72,6 @@ sub do_request {
         }
     }
 
-    delete $stash->{request}; # Cleanup for next request
-
     my $res = $ua->request($req);
 
     # XXX Should cookies be persistent across requests??
@@ -187,7 +185,7 @@ sub check_redirects_chain_for {
     for (@redir) {
         next unless $_;
         my $uri = $_->header("Location");
-        #diag("Redirect chain: $uri");
+        diag("Redirect chain: $uri");
         if ($uri eq $expected_url) {
             $found_redir = 1;
             last;
@@ -218,6 +216,9 @@ Given qr{a "(.+)" user agent}, sub {
 
 # Given the HTTP request header "Accept" is "text/html"
 Given qr{the HTTP request header "(.+)" is "(.*)"}, sub {
+    if (! $stash->{request}) {
+        die "Uninitialized request in the stash";
+    }
     $stash->{request}->{headers}->{$1} = $2;
     #diag("Set request header $1 to $2");
 };
