@@ -118,6 +118,7 @@ sub check_status_code_isnt {
     if (! $res) {
         return fail("No response object. Maybe you need a 'Given I go to \"<url>\"' first?");
     }
+    return fail($res->message) if _is_internal_error_response($res);
     my $status = $res->status_line;
     if (ref $expected eq "Regexp") {
         unlike($status => $expected,
@@ -138,6 +139,7 @@ sub check_status_code {
     if (! $res) {
         return fail("No response object. Maybe you need a 'Given I go to \"<url>\"' first?");
     }
+    return fail($res->message) if _is_internal_error_response($res);
     my $status = $res->status_line;
     if (ref $expected eq "Regexp") {
         like($status => $expected,
@@ -193,6 +195,12 @@ sub check_redirects_chain_for {
     }
 
     return $found_redir;
+}
+
+sub _is_internal_error_response {
+    my ($res) = @_;
+    return !$res->is_success
+        && ($res->header('Client-Warning') eq 'Internal response');
 }
 
 Given qr{(?:i will follow) a max of (\d+) redirects}, sub {
