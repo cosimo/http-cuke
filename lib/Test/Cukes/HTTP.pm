@@ -10,12 +10,12 @@ use Test::Cukes;
 use Test::More;
 use URI ();
 
-our $VERSION = "0.05";
+our $VERSION = "0.06";
 
 use constant {
     DEFAULT_TIMEOUT       => 60,
     DEFAULT_MAX_REDIRECTS => 5,
-    DEFAULT_USER_AGENT    => qq{http-cuke/0.04},
+    DEFAULT_USER_AGENT    => qq{http-cuke/0.06},
 };
 
 our $stash;
