@@ -10,12 +10,12 @@ use Test::Cukes;
 use Test::More;
 use URI ();
 
-our $VERSION = "0.06";
+our $VERSION = "0.07";
 
 use constant {
     DEFAULT_TIMEOUT       => 60,
     DEFAULT_MAX_REDIRECTS => 5,
-    DEFAULT_USER_AGENT    => qq{http-cuke/0.06},
+    DEFAULT_USER_AGENT    => qq{http-cuke/0.07},
 };
 
 our $stash;
@@ -199,8 +199,10 @@ sub check_redirects_chain_for {
 
 sub _is_internal_error_response {
     my ($res) = @_;
-    return !$res->is_success
-        && ($res->header('Client-Warning') eq 'Internal response');
+    my $is_success = $res->is_success;
+    my $client_warn_header = $res->header('Client-Warning') || '';
+    my $internal_response = $client_warn_header eq 'Internal response';
+    return ! $is_success && $internal_response;
 }
 
 Given qr{(?:i will follow) a max of (\d+) redirects}, sub {
