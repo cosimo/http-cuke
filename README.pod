@@ -117,6 +117,8 @@ Here's a list:
 
 =item C<Then I should be redirected to "(.+)">
 
+=item C<Then the HTTP response header "(.+)" should match "(.*)">
+
 =item C<Then the HTTP status code should be "(.+)">
 
 =item C<Then the HTTP status line should match "(.+)">
