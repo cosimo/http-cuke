@@ -1,5 +1,6 @@
 == Dependencies ==
 
+sudo cpan install Moose
 sudo cpan install Any::Moose
 sudo cpan install Carp::Assert
 sudo cpan install JSON
