@@ -23,6 +23,7 @@ sub key_value {
     my $found = 1;
     my $doc = $json;
 
+    # Mixed array/hash lookups like .data.popular_articles.0.title should work
     for my $subkey (@keys) {
         last unless defined $doc;
 
