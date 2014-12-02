@@ -7,10 +7,12 @@ use HTTP::Cookies ();
 use JSON ();
 use LWP::UserAgent ();
 use Test::Cukes;
+use Test::Cukes::JSON;
 use Test::More;
+use Time::Piece;
 use URI ();
 
-our $VERSION = "0.07";
+our $VERSION = "0.08";
 
 use constant {
     DEFAULT_TIMEOUT       => 60,
@@ -379,6 +381,80 @@ Then qr{the page MD5 checksum should be "(.+)"}, sub {
     my $page_content = $stash->{res}->content;
     my $actual_md5 = Digest::MD5::md5_hex($page_content);
     is($actual_md5, $correct_md5, "  MD5 checksum of page content is correct");
+};
+
+Then qr{the json document should have a "(.+)" key}, sub {
+    my $required_key = $1;
+    my $content = $stash->{res}->content;
+    my $json_has_key = 0;
+    eval {
+        my $json = JSON->new();
+        my $data = $json->decode($content);
+        $json_has_key = Test::Cukes::JSON::document_has_key($data, $required_key);
+    };
+    ok($json_has_key, "  JSON document has a ${required_key} key")
+        or fail("JSON document has no ${required_key} key.\n"
+            . "Exception: $@\n"
+            . "Content: " . $content);
+};
+
+Then qr{the json value for the "(.+)" key should not be empty}, sub {
+    my $key = $1;
+    my $content = $stash->{res}->content;
+    my $key_value;
+    eval {
+        my $json = JSON->new();
+        my $data = $json->decode($content);
+        $key_value = Test::Cukes::JSON::key_value($data, $key);
+    };
+    isnt($key_value => undef, "  JSON key ${key} has non-empty value (`$key_value')")
+        or fail("JSON key ${key} has an undefined value.\n"
+            . "Exception: $@\n"
+            . "Content: " . $content);
+};
+
+Then qr{the json value for the "(.+)" key should be a timestamp within (\d+) (hours?|minutes?|seconds?|days?)}, sub {
+    my $key = $1;
+    my $units = $2 + 0;
+    my $max_diff_secs = $units;
+    my $unit = $3;
+
+    if ($unit =~ m{^minute}) {
+        $max_diff_secs *= 60;
+    }
+    elsif ($unit =~ m{^hour}) {
+        $max_diff_secs *= 3600;
+    }
+    elsif ($unit =~ m{^day}) {
+        $max_diff_secs *= 86400;
+    }
+
+    my $content = $stash->{res}->content;
+    my $ts_value;
+    eval {
+        my $json = JSON->new();
+        my $data = $json->decode($content);
+        $ts_value = Test::Cukes::JSON::key_value($data, $key);
+    } or do {
+        diag("Exception: $@");
+    };
+
+    my $ts = Time::Piece->strptime($ts_value, "%Y-%m-%dT%H:%M:%S+00:00");
+    my $ts_secs = $ts->epoch();
+    my $t = gmtime;                  # Time::Piece version
+    my $now_secs = $t->epoch();
+    my $diff_secs = $now_secs - $ts_secs;
+
+    ok($diff_secs < $max_diff_secs,
+        "  JSON key ${key} has timestamp within $units $unit (${ts_value}, "
+        . "diff: ${diff_secs}s)")
+
+    or fail("JSON key ${key} either has an invalid timestamp or a timestamp out of the defined interval of $units $unit.\n"
+        . "Timestamp value: $ts_value\n"
+        . "In seconds: $ts_secs\n"
+        . "Now: $now_secs\n"
+        . "Diff in seconds: $diff_secs\n"
+        . "Max diff in seconds: $max_diff_secs\n");
 };
 
 1;
