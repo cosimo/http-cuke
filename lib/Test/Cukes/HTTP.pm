@@ -12,12 +12,12 @@ use Test::More;
 use Time::Piece;
 use URI ();
 
-our $VERSION = "0.08";
+our $VERSION = "0.09";
 
 use constant {
     DEFAULT_TIMEOUT       => 60,
     DEFAULT_MAX_REDIRECTS => 5,
-    DEFAULT_USER_AGENT    => qq{http-cuke/0.07},
+    DEFAULT_USER_AGENT    => qq{http-cuke/0.09},
 };
 
 our $stash;
@@ -407,8 +407,45 @@ Then qr{the json value for the "(.+)" key should not be empty}, sub {
         my $data = $json->decode($content);
         $key_value = Test::Cukes::JSON::key_value($data, $key);
     };
-    isnt($key_value => undef, "  JSON key ${key} has non-empty value (`$key_value')")
+    my $display_val = $key_value || "";
+    isnt($key_value => undef, "  JSON key ${key} has non-empty value (`$display_val')")
         or fail("JSON key ${key} has an undefined value.\n"
+            . "Exception: $@\n"
+            . "Content: " . $content);
+};
+
+Then qr{the json value for the "(.+)" key should be "(.+)"}, sub {
+    my $key = $1;
+    my $expected_value = $2;
+    my $content = $stash->{res}->content;
+    my $key_value;
+    eval {
+        my $json = JSON->new();
+        my $data = $json->decode($content);
+        $key_value = Test::Cukes::JSON::key_value($data, $key);
+    };
+    is($key_value => $expected_value,
+        "  JSON key ${key} should have value `$expected_value' (has `$key_value')")
+        or fail("JSON key ${key} has a value that is *not* `$expected_value' "
+            . "(has `$key_value').\n"
+            . "Exception: $@\n"
+            . "Content: " . $content);
+};
+
+Then qr{the json value for the "(.+)" key should match "(.+)"}, sub {
+    my $key = $1;
+    my $value_re = quotemeta($2);
+    $value_re = qr{$value_re};
+    my $content = $stash->{res}->content;
+    my $key_value;
+    eval {
+        my $json = JSON->new();
+        my $data = $json->decode($content);
+        $key_value = Test::Cukes::JSON::key_value($data, $key);
+    };
+    ok($key_value =~ $value_re,
+        "  JSON key ${key} matches $value_re (value is `$key_value')")
+        or fail("JSON key ${key} doesn't match $value_re (`$key_value')"
             . "Exception: $@\n"
             . "Content: " . $content);
 };
@@ -439,7 +476,11 @@ Then qr{the json value for the "(.+)" key should be a timestamp within (\d+) (ho
         diag("Exception: $@");
     };
 
-    my $ts = Time::Piece->strptime($ts_value, "%Y-%m-%dT%H:%M:%S+00:00");
+    # Understand the ".<microseconds>" suffix
+    if ($ts_value =~ m{^ \d\d\d\d-\d\d-\d\d T \d\d:\d\d:\d\d \. \d+ $}x) {
+        $ts_value =~ s{\.\d+$}{+00:00};
+    }
+    my $ts = Time::Piece->strptime($ts_value, "%Y-%m-%dT%T+00:00");
     my $ts_secs = $ts->epoch();
     my $t = gmtime;                  # Time::Piece version
     my $now_secs = $t->epoch();
