@@ -383,7 +383,7 @@ Then qr{the page MD5 checksum should be "(.+)"}, sub {
     is($actual_md5, $correct_md5, "  MD5 checksum of page content is correct");
 };
 
-Then qr{the json document should have a "(.+)" key}, sub {
+Then qr{the json document should have an? "(.+)" key}, sub {
     my $required_key = $1;
     my $content = $stash->{res}->content;
     my $json_has_key = 0;
