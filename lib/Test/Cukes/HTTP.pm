@@ -95,7 +95,7 @@ sub check_cached {
 
     my $h = $res->headers;
     my $x_varnish = $h->header('X-Varnish');
-    my $age = $h->header('Age');
+    my $age = $h->header('Age') || 0;
     if ($should_be_cached) {
         like($x_varnish, qr{^ (\d+) \s+ (\d+) $}x,
             "  X-Varnish header contains both current and original XID ($x_varnish)"
