@@ -476,12 +476,22 @@ Then qr{the json value for the "(.+)" key should be a timestamp within (\d+) (ho
         diag("Exception: $@");
     };
 
-    # Understand the ".<microseconds>" suffix
-    if ($ts_value =~ m{^ \d\d\d\d-\d\d-\d\d T \d\d:\d\d:\d\d \. \d+ $}x) {
-        $ts_value =~ s{\.\d+$}{+00:00};
+    my $ts_secs;
+
+    # Unix epoch timestamp?
+    if ($ts_value =~ m{^ \d+ $}x) {
+        $ts_secs = $ts_value;
     }
-    my $ts = Time::Piece->strptime($ts_value, "%Y-%m-%dT%T+00:00");
-    my $ts_secs = $ts->epoch();
+
+    else {
+        # Solr/ISO date, but try to get the ".<microseconds>" suffix
+        if ($ts_value =~ m{^ \d\d\d\d-\d\d-\d\d T \d\d:\d\d:\d\d \. \d+ $}x) {
+            $ts_value =~ s{\.\d+$}{+00:00};
+        }
+        my $ts = Time::Piece->strptime($ts_value, "%Y-%m-%dT%T+00:00");
+        $ts_secs = $ts->epoch();
+    }
+
     my $t = gmtime;                  # Time::Piece version
     my $now_secs = $t->epoch();
     my $diff_secs = $now_secs - $ts_secs;
