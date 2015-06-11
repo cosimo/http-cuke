@@ -111,6 +111,13 @@ Here's a list:
 
 =item C<When I go to "(.+)">
 
+=item C<When I send a ([A-Z]+) request to "([^"]+)" with body "(.*)">
+
+A super-cheap hack, but it works for now. Examples:
+
+    When I send a POST request to "http://somedomain.lan/" with body ""
+    When I send a PATCH request to "http://somedomain.lan/some-api" with body "{"hello":"there"}"
+
 =item C<Then the page should be cached>
 
 =item C<Then the page should not be cached>
@@ -141,7 +148,7 @@ Cosimo Streppone, C<< <cosimo@opera.com> >>
 
 This code is offered under the Open Source BSD license.
 
-Copyright (c) 2012, Opera Software. All rights reserved.
+Copyright (c) 2015, Opera Software. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:

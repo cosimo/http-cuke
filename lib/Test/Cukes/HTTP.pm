@@ -54,16 +54,21 @@ sub get_useragent {
 }
 
 sub do_request {
-    my ($url) = @_;
+    my ($url, $method, $req_body) = @_;
     $stash->{url} = $url;
+    $method ||= "GET";
     my $ua = get_useragent();
-    my $req = HTTP::Request->new("GET" => $url);
+    my $req = HTTP::Request->new($method => $url);
 
     if (my $headers = $stash->{request}->{headers}) {
         for my $k (keys %{$headers}) {
             #diag("Setting header $k to ".$headers->{$k});
             $req->header($k => $headers->{$k});
         }
+    }
+
+    if ($method ne "GET" && $req_body) {
+        $req->content($req_body);
     }
 
     if (my $cookies = $stash->{request}->{cookies}) {
@@ -247,6 +252,20 @@ When qr{I go to "(.+)"}, sub {
     my $url = $1;
     $stash->{url} = $url;
     do_request($url);
+};
+
+# OPTIONS, POST, PUT, PATCH, DELETE, whatever you fancy.
+# The limitation is that the body must be inlined.
+# Doing otherwise requires bigger modifications to the scenario parser.
+When qr{I send a ([A-Z]+) request to "([^"]+)" with body "(.*)"$}, sub {
+    my $method = $1;
+    my $url = $2;
+    my $body = $3;
+    if (defined $body) {
+        $body =~ s{\\"}{"}g;
+    }
+    $stash->{url} = $url;
+    do_request($url, $method, $body);
 };
 
 Then qr{the page should be cached}, sub {
