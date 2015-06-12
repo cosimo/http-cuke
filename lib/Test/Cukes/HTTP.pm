@@ -257,7 +257,7 @@ When qr{I go to "(.+)"}, sub {
 # OPTIONS, POST, PUT, PATCH, DELETE, whatever you fancy.
 # The limitation is that the body must be inlined.
 # Doing otherwise requires bigger modifications to the scenario parser.
-When qr{I send a ([A-Z]+) request to "([^"]+)" with body "(.*)"$}, sub {
+When qr{I send a ([A-Z]+) request to "([^"]+)"(?: with body "(.*)")?$}, sub {
     my $method = $1;
     my $url = $2;
     my $body = $3;

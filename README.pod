@@ -111,10 +111,13 @@ Here's a list:
 
 =item C<When I go to "(.+)">
 
+=item C<When I send a ([A-Z]+) request to "([^"]+)">
+
 =item C<When I send a ([A-Z]+) request to "([^"]+)" with body "(.*)">
 
 A super-cheap hack, but it works for now. Examples:
 
+    When I send a GET request to "http://somedomain.lan/"
     When I send a POST request to "http://somedomain.lan/" with body ""
     When I send a PATCH request to "http://somedomain.lan/some-api" with body "{"hello":"there"}"
 
