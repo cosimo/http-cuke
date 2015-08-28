@@ -19,7 +19,17 @@ sub key_value {
     # $key can be "key1.key2..."
     # Hopefully this rough generalization won't cause much
     # trouble in practice (in case legit keys have '.' in them)
-    my @keys = split m{\.}, $key;
+    my @keys;
+    my $slash_pos = index($key, '/');
+    my $dot_pos = index($key, '.');
+    if ($slash_pos > 0 && $dot_pos > 0) {     # Can't be 1st char
+        if ($slash_pos < $dot_pos) {
+            @keys = split m{/}, $key;
+        }
+    }
+    if (! @keys) {
+        @keys = split m{\.}, $key;
+    }
     my $found = 1;
     my $doc = $json;
 
@@ -27,10 +37,13 @@ sub key_value {
     for my $subkey (@keys) {
         last unless defined $doc;
 
-        my $numeric_key = ($subkey =~ m{^ \d+ $}) ? 1 : 0;
+        my $numeric_key = $subkey =~ m{^ \d+ $} ? 1 : 0;
         my $element_type = ref $doc;
-        if ($element_type eq 'ARRAY' && $numeric_key && exists $doc->[$subkey]) {
-            $doc = $doc->[$subkey];
+        if ($element_type eq 'ARRAY'
+            && defined $numeric_key
+            && $numeric_key ne ""
+            && exists $doc->[0 + $subkey]) {
+            $doc = $doc->[0 + $subkey];
         }
         elsif ($element_type eq 'HASH' && exists $doc->{$subkey}) {
             $doc = $doc->{$subkey};

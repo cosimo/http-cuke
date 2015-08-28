@@ -469,6 +469,34 @@ Then qr{the json value for the "(.+)" key should match "(.+)"}, sub {
             . "Content: " . $content);
 };
 
+Then qr{the json value for the "(.+)" key should be (greater|lesser) than "(.+)"}, sub {
+    my $key = $1;
+    my $rel = $2;
+    my $cmp_val = $3;
+    my $content = $stash->{res}->content;
+    my $key_value;
+    eval {
+        my $json = JSON->new();
+        my $data = $json->decode($content);
+        $key_value = Test::Cukes::JSON::key_value($data, $key);
+    };
+    my $result = 0;
+    if ($rel eq 'greater') {
+        $result = $key_value > $cmp_val ? 1 : 0;
+    }
+    elsif ($rel eq 'lesser') {
+        $result = $key_value < $cmp_val ? 1 : 0;
+    }
+    else {
+        fail("I'm stupid and don't know which relation '$rel' represents. "
+            . "Please choose either 'greater' or 'lesser'.");
+    }
+    ok($result, "  JSON key ${key} is $rel than $cmp_val (value is `$key_value')")
+        or fail("JSON key ${key} is not $rel than $cmp_val (assertion `$key_value $rel than $cmp_val' is false)"
+            . "Exception: $@\n"
+            . "Content: " . $content);
+};
+
 Then qr{the json value for the "(.+)" key should be a timestamp within (\d+) (hours?|minutes?|seconds?|days?)}, sub {
     my $key = $1;
     my $units = $2 + 0;
