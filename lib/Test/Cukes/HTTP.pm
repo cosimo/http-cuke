@@ -3,6 +3,7 @@ package Test::Cukes::HTTP;
 use strict;
 use warnings;
 
+use Encode ();
 use HTTP::Cookies ();
 use JSON ();
 use LWP::UserAgent ();
@@ -170,6 +171,9 @@ sub page_content_contains {
     }
 
     my $body = $res->content;
+    eval {
+        $body = Encode::decode_utf8($body);
+    };
 
     if (index($body, $needle) > -1) {
         return 1;
@@ -422,7 +426,7 @@ Then qr{the json value for the "(.+)" key should not be empty}, sub {
     my $content = $stash->{res}->content;
     my $key_value;
     eval {
-        my $json = JSON->new();
+        my $json = JSON->new()->utf8(1);
         my $data = $json->decode($content);
         $key_value = Test::Cukes::JSON::key_value($data, $key);
     };
@@ -439,7 +443,7 @@ Then qr{the json value for the "(.+)" key should be "(.+)"}, sub {
     my $content = $stash->{res}->content;
     my $key_value;
     eval {
-        my $json = JSON->new();
+        my $json = JSON->new()->utf8(1);
         my $data = $json->decode($content);
         $key_value = Test::Cukes::JSON::key_value($data, $key);
     };
@@ -458,7 +462,7 @@ Then qr{the json value for the "(.+)" key should match "(.+)"}, sub {
     my $content = $stash->{res}->content;
     my $key_value;
     eval {
-        my $json = JSON->new();
+        my $json = JSON->new()->utf8(1);
         my $data = $json->decode($content);
         $key_value = Test::Cukes::JSON::key_value($data, $key);
     };
@@ -476,7 +480,7 @@ Then qr{the json value for the "(.+)" key should be (greater|lesser) than "(.+)"
     my $content = $stash->{res}->content;
     my $key_value;
     eval {
-        my $json = JSON->new();
+        my $json = JSON->new()->utf8(1);
         my $data = $json->decode($content);
         $key_value = Test::Cukes::JSON::key_value($data, $key);
     };
@@ -516,7 +520,7 @@ Then qr{the json value for the "(.+)" key should be a timestamp within (\d+) (ho
     my $content = $stash->{res}->content;
     my $ts_value;
     eval {
-        my $json = JSON->new();
+        my $json = JSON->new()->utf8(1);
         my $data = $json->decode($content);
         $ts_value = Test::Cukes::JSON::key_value($data, $key);
     } or do {
