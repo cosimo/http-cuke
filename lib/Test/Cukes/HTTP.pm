@@ -367,7 +367,7 @@ Then qr{the HTTP status line should match "(.+)"}, sub {
 };
 
 # Then the page does not contain "We are sorry"
-Then qr{the page should not contain "(.+)"}, sub {
+Then qr{the page (?:should|does) not contain "(.+)"}, sub {
     my $unwanted_string = $1;
     my $found = page_content_contains($stash, $unwanted_string);
     ok(!$found, "  String '$unwanted_string' was not found in the page")
@@ -375,7 +375,7 @@ Then qr{the page should not contain "(.+)"}, sub {
 };
 
 # Then the page contains "We are sorry"
-Then qr{the page should contain "(.+)"}, sub {
+Then qr{the page (?:should|does) contains? "(.+)"}, sub {
     my $wanted_string = $1;
     my $found = page_content_contains($stash, $wanted_string);
     ok($found, "  String '$wanted_string' was found in the page")
@@ -538,6 +538,9 @@ Then qr{the json value for the "(.+)" key should be a timestamp within (\d+) (ho
         # Solr/ISO date, but try to get the ".<microseconds>" suffix
         if ($ts_value =~ m{^ \d\d\d\d-\d\d-\d\d T \d\d:\d\d:\d\d \. \d+ $}x) {
             $ts_value =~ s{\.\d+$}{+00:00};
+        }
+        elsif ($ts_value =~ m{^ \d\d\d\d-\d\d-\d\d T \d\d:\d\d:\d\d Z $}x) {
+            $ts_value =~ s{Z$}{+00:00};
         }
         my $ts = Time::Piece->strptime($ts_value, "%Y-%m-%dT%T+00:00");
         $ts_secs = $ts->epoch();
