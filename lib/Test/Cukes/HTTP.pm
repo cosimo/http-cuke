@@ -431,8 +431,12 @@ Then qr{the json value for the "(.+)" key should not be empty}, sub {
         $key_value = Test::Cukes::JSON::key_value($data, $key);
     };
     my $display_val = $key_value || "";
-    isnt($key_value => undef, "  JSON key ${key} has non-empty value (`$display_val')")
+    isnt($key_value => undef, "  JSON key ${key} has a value (`$display_val')")
         or fail("JSON key ${key} has an undefined value.\n"
+            . "Exception: $@\n"
+            . "Content: " . $content);
+    isnt($key_value => '', "  JSON key ${key} is not empty (`$display_val')")
+        or fail("JSON key ${key} is empty.\n"
             . "Exception: $@\n"
             . "Content: " . $content);
 };
