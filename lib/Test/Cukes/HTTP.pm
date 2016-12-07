@@ -455,9 +455,13 @@ Then qr{the json value for the "(.+)" key should be "(.+)"}, sub {
             . "Content: " . $content);
 };
 
-Then qr{the json value for the "(.+)" key should match "(.+)"}, sub {
+Then qr{the json value for the "(.+)" key should( not)? match "(.+)"}, sub {
     my $key = $1;
-    my $value_re = quotemeta($2);
+    my $not = $2;
+    my $value_re = quotemeta($3);
+
+    my $should_match = !defined $not;
+
     $value_re = qr{$value_re};
     my $content = $stash->{res}->content;
     my $key_value;
@@ -466,11 +470,20 @@ Then qr{the json value for the "(.+)" key should match "(.+)"}, sub {
         my $data = $json->decode($content);
         $key_value = Test::Cukes::JSON::key_value($data, $key);
     };
-    ok($key_value =~ $value_re,
-        "  JSON key ${key} matches $value_re (value is `$key_value')")
-        or fail("JSON key ${key} doesn't match $value_re (`$key_value')"
-            . "Exception: $@\n"
-            . "Content: " . $content);
+
+    if ($should_match) {
+        ok($key_value =~ $value_re,
+            "  JSON key ${key} matches $value_re (value is `$key_value')")
+            or fail("JSON key ${key} doesn't match $value_re (`$key_value')"
+                . "Exception: $@\n"
+                . "Content: " . $content);
+    } else {
+        ok($key_value !~ $value_re,
+            "  JSON key ${key} does not match $value_re (value is `$key_value')")
+            or fail("JSON key ${key} does match $value_re (`$key_value')"
+                . "Exception: $@\n"
+                . "Content: " . $content);
+    }
 };
 
 Then qr{the json value for the "(.+)" key should be (greater|lesser) than "(.+)"}, sub {
