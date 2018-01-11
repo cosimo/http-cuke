@@ -44,6 +44,9 @@ This is a test you can actually run with:
     cd bin
     ./http-cuke --test ../tests/example.test
 
+You can also use B<variables> in your test files.
+See the L<VARIABLES SUPPORT> chapter.
+
 =head1 DESCRIPTION
 
 Run cucumber style tests against any HTTP server.
@@ -63,7 +66,41 @@ response bodies, inject custom HTTP headers in the requests,
 check Varnish responses, and more.
 
 
-=cut
+=head1 OTHER SUPPORTED OPTIONS
+
+=over
+
+=item C<--allow-insecure-ssl>
+
+When this option is specified, C<http-cuke> will silently connect to HTTPS hosts
+B<without verifying SSL certificates validity!>. This is B<INSECURE>, so only
+do it if you are aware of the implications.
+
+The typical use case is to connect to individual backends part of a bigger
+cluster typically behind a load balancer.
+
+=item C<--useragent-timeout>
+
+How long should the user agent that makes the requests wait for backend
+requests. This is using C<LWP::UserAgent>, so don't expect perfect control
+of client timeout. For example, this will usually not include eventual DNS
+timeouts/slowdowns, so the actual timeout might be much longer than you
+specify.
+
+Usage:
+
+    http-cuke --useragent-timeout 10 --test ...
+
+=item C<--useragent-string>
+
+Override the default user agent string (C<http-cuke/version>).
+
+Usage:
+
+    http-cuke --useragent-string 'MyWebSiteTesterFTW/0.01'
+
+=back
+
 
 =head1 MOTIVATION: THE WHY
 
@@ -89,6 +126,43 @@ The B<main advantage of this tool> is that it opens up even
 complex HTTP testing to a broader audience, not necessarily
 programmers. That is, btw, the whole point of BDD testing,
 and that's Good(tm).
+
+
+=head1 VARIABLES SUPPORT
+
+Here's an example of test script in Cucumber style:
+
+    Feature: My service can be monitored correctly by Nagios
+    In order to make sure that Nagios alerts don't fire unnecessarily
+    As an operations ninja
+    I want to verify that the resources accessed by Nagios are always available
+
+    Scenario: ping.html page is served over http
+      When I go to "http://my.server.local/ping.html"
+      Then the final HTTP status code should be "200"
+      Then the page should contain "I am alive"
+
+It is possible (and desirable) to embed variables in your test files.
+In the example above, instead of hardcoding the C<http://my.server.local>
+address, you can use a variable like this:
+
+    Scenario: ping.html page is served over http
+      When I go to "{{ SERVER_URL }}/ping.html"
+      Then the final HTTP status code should be "200"
+      Then the page should contain "I am alive"
+
+To run this test, you need to invoke C<http-cuke> with the C<-D>
+option, to define variables. Example:
+
+    http-cuke --test ./nagios.test -D SERVER_URL=http://my.server.local
+
+If you use variables in your test scripts, but omit to declare them
+when invoking C<http-cuke>, you will be warned with a message:
+
+    Undefined variable 'SERVER_URL' in line:
+
+      When I go to "{{ SERVER_URL }}/ping.html"
+
 
 =head1 AVAILABLE TESTS
 
@@ -127,49 +201,73 @@ A super-cheap hack, but it works for now. Examples:
 
 =item C<Then I should be redirected to "(.+)">
 
+=item C<Then I should not be redirected to "(.+)">
+
 =item C<Then the HTTP response header "(.+)" should match "(.*)">
 
 =item C<Then the HTTP status code should be "(.+)">
 
+=item C<Then the HTTP status code should not be "(.+)">
+
+=item C<Then the HTTP response header "(.+)" should not be there>
+
+=item C<Then the HTTP response header "(.+)" should be "(.+)">
+
+=item C<Then the HTTP response header "(.+)" should match "(.+)">
+
 =item C<Then the HTTP status line should match "(.+)">
+
+=item C<Then the page should contain "(.+)">
 
 =item C<Then the page should not contain "(.+)">
 
 =item C<Then the server should send a CSRF token>
 
-=item C<Then the page should contain "(.+)">
-
 =item C<Then the page MD5 checksum should be "(.+)">
+
+=item C<Then the page should be a valid JSON document>
+
+=item C<Then the json document should have a "(.+)" key>
+
+=item C<Then the json value for the "(.+)" key should not be empty>
+
+=item C<Then the json value for the "(.+)" key should be "(.+)">
+
+=item C<Then the json value for the "(.+)" key should be (greater|lesser) than "(.+)">
+
+=item C<Then the json value for the "(.+)" key should be a timestamp within (\d+) (hours?|minutes?|seconds?|days?)>
 
 =back
 
+
 =head1 AUTHOR
 
-Cosimo Streppone, C<< <cosimo@opera.com> >>
+Cosimo Streppone, C<cosimo@cpan.org>
 
 =head1 LICENSE AND COPYRIGHT
 
 This code is offered under the Open Source BSD license.
 
-Copyright (c) 2015, Opera Software. All rights reserved.
+    Copyright (c) 2012-2017, Opera Software. All rights reserved.
+    Copyright (c) 2018, Kahoot AS. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
 =over 4
 
-=item
+=item *
 
 Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
 
-=item
+=item *
 
 Redistributions in binary form must reproduce the above copyright notice,
 this list of conditions and the following disclaimer in the documentation
 and/or other materials provided with the distribution.
 
-=item
+=item *
 
 Neither the name of Opera Software nor the names of its contributors may
 be used to endorse or promote products derived from this software without
@@ -192,4 +290,3 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 =cut
-

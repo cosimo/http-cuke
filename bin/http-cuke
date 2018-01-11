@@ -1,112 +1,19 @@
-#!/usr/bin/env perl
+#!/usr/bin/perl
 
-=head1 NAME
+#-----------------------------------------------------------------------------
+#
+# http-cuke - Cucumber-style HTTP configuration testing for the masses
+#
+# See __END__ for the full documentation
+#
+#-----------------------------------------------------------------------------
 
-http-cuke - Cucumber-style HTTP configuration testing for the masses
-
-=head1 SYNOPSIS
-
-Example of test scenario:
-
-    Feature: Front page responds correctly
-    In order to avoid problems with caching logic and/or frontend configuration
-    As an operations ninja
-    I want to check that front page is served correctly and the frontends configuration is correct
-
-    Scenario: HTTP to HTTPS redirects are in place
-      When I go to "http://my.example.server.lan/"
-      Then I should be redirected to "https://my.example.server.lan/"
-      Then the final HTTP status code should be "200"
-
-Put that text in a C<whatever.test> file, and point
-C<http-cuke> to the directory that contains it with:
-
-    http-cuke --test-dir ./some-tests
-
-Or run just a single test file:
-
-    http-cuke --test ./single.test
-
-Have a look at the C<tests> directory where you will
-find this example:
-
-    Feature: Google front page allows me to search
-    In order not to be stuck without being able to google something
-    As a curious person
-    I want to be check that Google is available
-
-    Scenario: Google frontpage is available
-      Given the HTTP request header "Accept-Language" is "en"
-      When I go to "http://www.google.com/"
-      Then the final HTTP status code should be "200"
-      Then the page should contain "Google"
-
-This is a test you can actually run with:
-
-    cd bin
-    ./http-cuke --test ../tests/example.test
-
-You can also use B<variables> in your test files.
-See the L<VARIABLES SUPPORT> chapter.
-
-=head1 DESCRIPTION
-
-Run cucumber style tests against any HTTP server.
-
-If you are not familiar with cucumber, check it out
-at L<http://cukes.info/>.
-
-With this tool you can define set of tests (or B<features>
-and B<scenarios> in cucumber-speak) and run them.
-
-The type of tests that C<http-cuke> can help you with
-are those that involve checking a HTTP server configuration,
-behavior or plain responses.
-
-You can check redirects, response headers, cookies,
-response bodies, inject custom HTTP headers in the requests,
-check Varnish responses, and more.
-
-=head1 VARIABLES SUPPORT
-
-Here's an example of test script in Cucumber style:
-
-    Feature: My service can be monitored correctly by Nagios
-    In order to make sure that Nagios alerts don't fire unnecessarily
-    As an operations ninja
-    I want to verify that the resources accessed by Nagios are always available
-
-    Scenario: ping.html page is served over http
-      When I go to "http://my.server.local/ping.html"
-      Then the final HTTP status code should be "200"
-      Then the page should contain "I am alive"
-
-It is possible (and desirable) to embed variables in your test files.
-In the example above, instead of hardcoding the C<http://my.server.local>
-address, you can use a variable like this:
-
-    Scenario: ping.html page is served over http
-      When I go to "{{ SERVER_URL }}/ping.html"
-      Then the final HTTP status code should be "200"
-      Then the page should contain "I am alive"
-
-To run this test, you need to invoke C<http-cuke> with the C<-D>
-option, to define variables. Example:
-
-    http-cuke --test ./nagios.test -D SERVER_URL=http://my.server.local
-
-If you use variables in your test scripts, but omit to declare them
-when invoking C<http-cuke>, you will be warned with a message:
-
-    Undefined variable 'SERVER_URL' in line:
-
-      When I go to "{{ SERVER_URL }}/ping.html"
-
-
-=cut
-
+use 5.014;
 use strict;
-use warnings;
+use open qw( :encoding(UTF-8) :std );
+use utf8;
+use warnings qw( FATAL utf8 );
+use autodie;
 
 use Carp ();
 use File::Spec ();
@@ -203,6 +110,110 @@ Test::Cukes::runtests();
 
 __END__
 
+=head1 NAME
+
+http-cuke - Cucumber-style HTTP configuration testing for the masses
+
+=head1 SYNOPSIS
+
+Example of test scenario:
+
+    Feature: Front page responds correctly
+    In order to avoid problems with caching logic and/or frontend configuration
+    As an operations ninja
+    I want to check that front page is served correctly and the frontends configuration is correct
+
+    Scenario: HTTP to HTTPS redirects are in place
+      When I go to "http://my.example.server.lan/"
+      Then I should be redirected to "https://my.example.server.lan/"
+      Then the final HTTP status code should be "200"
+
+Put that text in a C<whatever.test> file, and point
+C<http-cuke> to the directory that contains it with:
+
+    http-cuke --test-dir ./some-tests
+
+Or run just a single test file:
+
+    http-cuke --test ./single.test
+
+Have a look at the C<tests> directory where you will
+find this example:
+
+    Feature: Google front page allows me to search
+    In order not to be stuck without being able to google something
+    As a curious person
+    I want to be check that Google is available
+
+    Scenario: Google frontpage is available
+      Given the HTTP request header "Accept-Language" is "en"
+      When I go to "http://www.google.com/"
+      Then the final HTTP status code should be "200"
+      Then the page should contain "Google"
+
+This is a test you can actually run with:
+
+    cd bin
+    ./http-cuke --test ../tests/example.test
+
+You can also use B<variables> in your test files.
+See the L<VARIABLES SUPPORT> chapter.
+
+=head1 DESCRIPTION
+
+Run cucumber style tests against any HTTP server.
+
+If you are not familiar with cucumber, check it out
+at L<http://cukes.info/>.
+
+With this tool you can define set of tests (or B<features>
+and B<scenarios> in cucumber-speak) and run them.
+
+The type of tests that C<http-cuke> can help you with
+are those that involve checking a HTTP server configuration,
+behavior or plain responses.
+
+You can check redirects, response headers, cookies,
+response bodies, inject custom HTTP headers in the requests,
+check Varnish responses, and more.
+
+
+=head1 OTHER SUPPORTED OPTIONS
+
+=over
+
+=item C<--allow-insecure-ssl>
+
+When this option is specified, C<http-cuke> will silently connect to HTTPS hosts
+B<without verifying SSL certificates validity!>. This is B<INSECURE>, so only
+do it if you are aware of the implications.
+
+The typical use case is to connect to individual backends part of a bigger
+cluster typically behind a load balancer.
+
+=item C<--useragent-timeout>
+
+How long should the user agent that makes the requests wait for backend
+requests. This is using C<LWP::UserAgent>, so don't expect perfect control
+of client timeout. For example, this will usually not include eventual DNS
+timeouts/slowdowns, so the actual timeout might be much longer than you
+specify.
+
+Usage:
+
+    http-cuke --useragent-timeout 10 --test ...
+
+=item C<--useragent-string>
+
+Override the default user agent string (C<http-cuke/version>).
+
+Usage:
+
+    http-cuke --useragent-string 'MyWebSiteTesterFTW/0.01'
+
+=back
+
+
 =head1 MOTIVATION: THE WHY
 
 This tool is B<not> meant to replace tools like C<WWW::Mechanize>
@@ -228,6 +239,43 @@ complex HTTP testing to a broader audience, not necessarily
 programmers. That is, btw, the whole point of BDD testing,
 and that's Good(tm).
 
+
+=head1 VARIABLES SUPPORT
+
+Here's an example of test script in Cucumber style:
+
+    Feature: My service can be monitored correctly by Nagios
+    In order to make sure that Nagios alerts don't fire unnecessarily
+    As an operations ninja
+    I want to verify that the resources accessed by Nagios are always available
+
+    Scenario: ping.html page is served over http
+      When I go to "http://my.server.local/ping.html"
+      Then the final HTTP status code should be "200"
+      Then the page should contain "I am alive"
+
+It is possible (and desirable) to embed variables in your test files.
+In the example above, instead of hardcoding the C<http://my.server.local>
+address, you can use a variable like this:
+
+    Scenario: ping.html page is served over http
+      When I go to "{{ SERVER_URL }}/ping.html"
+      Then the final HTTP status code should be "200"
+      Then the page should contain "I am alive"
+
+To run this test, you need to invoke C<http-cuke> with the C<-D>
+option, to define variables. Example:
+
+    http-cuke --test ./nagios.test -D SERVER_URL=http://my.server.local
+
+If you use variables in your test scripts, but omit to declare them
+when invoking C<http-cuke>, you will be warned with a message:
+
+    Undefined variable 'SERVER_URL' in line:
+
+      When I go to "{{ SERVER_URL }}/ping.html"
+
+
 =head1 AVAILABLE TESTS
 
 So what are the B<magic words> that are available to build
@@ -249,6 +297,16 @@ Here's a list:
 
 =item C<When I go to "(.+)">
 
+=item C<When I send a ([A-Z]+) request to "([^"]+)">
+
+=item C<When I send a ([A-Z]+) request to "([^"]+)" with body "(.*)">
+
+A super-cheap hack, but it works for now. Examples:
+
+    When I send a GET request to "http://somedomain.lan/"
+    When I send a POST request to "http://somedomain.lan/" with body ""
+    When I send a PATCH request to "http://somedomain.lan/some-api" with body "{"hello":"there"}"
+
 =item C<Then the page should be cached>
 
 =item C<Then the page should not be cached>
@@ -257,9 +315,11 @@ Here's a list:
 
 =item C<Then I should not be redirected to "(.+)">
 
-=item C<Then the HTTP status code should not be "(.+)">
+=item C<Then the HTTP response header "(.+)" should match "(.*)">
 
 =item C<Then the HTTP status code should be "(.+)">
+
+=item C<Then the HTTP status code should not be "(.+)">
 
 =item C<Then the HTTP response header "(.+)" should not be there>
 
@@ -269,43 +329,57 @@ Here's a list:
 
 =item C<Then the HTTP status line should match "(.+)">
 
-=item C<Then the page should not contain "(.+)">
-
 =item C<Then the page should contain "(.+)">
+
+=item C<Then the page should not contain "(.+)">
 
 =item C<Then the server should send a CSRF token>
 
 =item C<Then the page MD5 checksum should be "(.+)">
 
+=item C<Then the page should be a valid JSON document>
+
+=item C<Then the json document should have a "(.+)" key>
+
+=item C<Then the json value for the "(.+)" key should not be empty>
+
+=item C<Then the json value for the "(.+)" key should be "(.+)">
+
+=item C<Then the json value for the "(.+)" key should be (greater|lesser) than "(.+)">
+
+=item C<Then the json value for the "(.+)" key should be a timestamp within (\d+) (hours?|minutes?|seconds?|days?)>
+
 =back
+
 
 =head1 AUTHOR
 
-Cosimo Streppone, C<< <cosimo@opera.com> >>
+Cosimo Streppone, C<cosimo@cpan.org>
 
 =head1 LICENSE AND COPYRIGHT
 
 This code is offered under the Open Source BSD license.
 
-Copyright (c) 2012-2013, Opera Software. All rights reserved.
+    Copyright (c) 2012-2017, Opera Software. All rights reserved.
+    Copyright (c) 2018, Kahoot AS. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
 =over 4
 
-=item
+=item *
 
 Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
 
-=item
+=item *
 
 Redistributions in binary form must reproduce the above copyright notice,
 this list of conditions and the following disclaimer in the documentation
 and/or other materials provided with the distribution.
 
-=item
+=item *
 
 Neither the name of Opera Software nor the names of its contributors may
 be used to endorse or promote products derived from this software without
@@ -325,5 +399,6 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
 ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 
 =cut
