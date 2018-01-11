@@ -37,9 +37,9 @@ sub runtests {
     for my $f (@{ $feature->{$caller} }) {
 
         Test::More::diag(
-            ("=" x 60) .
-            "\n    FEATURE: " . $f->name . "\n" .
-            ("=" x 60)
+            "\n" . ("=" x 60) .
+            "\n    FEATURE: " . $f->name .
+            "\n" . ("=" x 60)
         ) if $ENV{TEST_VERBOSE};
 
         my @scenarios_of_caller = @{$f->scenarios};
