@@ -1,0 +1,44 @@
+=head1 INSTALLATION
+
+Either install the dependencies listed below, or use the provided
+C<install-dependencies.sh> script (for Debian derivative systems only).
+
+=over
+
+=item *
+
+L<HTTP::Cookies>
+
+or C<libhttp-cookies-perl> package on Debian derivatives
+
+=item *
+
+L<LWP::UserAgent>
+
+(C<libwww-perl>)
+
+=item *
+
+L<Any::Moose>
+
+(C<libany-moose-perl>)
+
+=item *
+
+L<Carp::Assert>
+
+(C<libcarp-assert-perl>)
+
+=item *
+
+L<JSON>
+
+(C<libjson-perl>)
+
+=item *
+
+L<Try::Tiny>
+
+(C<libtry-tiny-perl>)
+
+=back

@@ -1,9 +1,0 @@
-== Dependencies ==
-
-sudo cpan install HTTP::Cookies
-sudo cpan install LWP::UserAgent
-sudo cpan install Moose
-sudo cpan install Any::Moose
-sudo cpan install Carp::Assert
-sudo cpan install JSON
-
