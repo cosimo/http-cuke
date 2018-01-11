@@ -71,13 +71,18 @@ sub load_test_feature {
 }
 
 Getopt::Long::GetOptions(
-    'test-dir:s' => \my $test_dir,
-    'test:s'     => \my $test_file,
-    'D:s'        => \my %variables,
+    'test-dir:s'          => \my $test_dir,
+    'test:s'              => \my $test_file,
+    'D:s'                 => \my %variables,
+    'allow-insecure-ssl'  => \my $allow_insecure_ssl,
+    'useragent-timeout:i' => \my $useragent_timeout,
+    'useragent-string:s'  => \my $useragent_string,
 );
 
 if (! $test_dir && ! $test_file) {
-    warn "Usage: $0 [--test-dir <your-test-cases-dir>] [--test <single-test-file>] [-D variable=value] [...]\n\n";
+    warn "Usage: $0 [--test-dir <your-test-cases-dir>] [--test <single-test-file>]\n"
+       . "      [-D variable=value] [--allow-insecure-ssl]\n"
+       . "      [--useragent-timeout=<n>] [--useragent-string=<...>]\n\n";
     warn "You need to specify a test directory where to load test cases from\n";
     warn "or a single test file to be run\n";
     exit 1;
@@ -105,6 +110,12 @@ for (@test) {
     #diag($feature);
     #diag("-" x 60);
 }
+
+Test::Cukes::HTTP::useragent_options({
+    allow_insecure_ssl => $allow_insecure_ssl,
+    useragent_string   => $useragent_string,
+    timeout            => $useragent_timeout,
+});
 
 Test::Cukes::runtests();
 
