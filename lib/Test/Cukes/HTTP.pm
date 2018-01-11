@@ -1,10 +1,12 @@
 package Test::Cukes::HTTP;
 
+use 5.014;
 use strict;
 use warnings;
 
 use Encode ();
 use HTTP::Cookies ();
+use IO::Socket::SSL;
 use JSON ();
 use LWP::UserAgent ();
 use Test::Cukes;
@@ -13,15 +15,16 @@ use Test::More;
 use Time::Piece;
 use URI ();
 
-our $VERSION = "0.09";
+our $VERSION = "0.10";
 
 use constant {
     DEFAULT_TIMEOUT       => 60,
     DEFAULT_MAX_REDIRECTS => 5,
-    DEFAULT_USER_AGENT    => qq{http-cuke/0.09},
+    DEFAULT_USER_AGENT    => qq{http-cuke/0.10},
 };
 
 our $stash;
+our $useragent_options = {};
 
 sub reset_stash {
     $stash = {
@@ -33,23 +36,42 @@ sub reset_stash {
 
 reset_stash();
 
-sub get_useragent {
+sub useragent_options {
+    $useragent_options = shift;
+}
 
-    my $ua;
+sub init_useragent {
+    my $opt = $useragent_options;
 
-    if ($ua = $stash->{agent}) {
-        return $ua;
-    }
+    my $ssl_opts = $opt->{allow_insecure_ssl}
+        ? { verify_hostname => 0,
+            SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_NONE, }
+        : { verify_hostname => 1,
+            SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_PEER, };
 
-    $ua = $stash->{agent} ||= LWP::UserAgent->new(
-        agent        => DEFAULT_USER_AGENT,
-        max_redirect => DEFAULT_MAX_REDIRECTS,
-        timeout      => DEFAULT_TIMEOUT,
+    my $ua = $stash->{agent} = LWP::UserAgent->new(
+        agent        => $opt->{useragent_string} // DEFAULT_USER_AGENT,
+        max_redirect => $opt->{max_redirects}    // DEFAULT_MAX_REDIRECTS,
+        timeout      => $opt->{timeout}          // DEFAULT_TIMEOUT,
+        ssl_opts     => $ssl_opts,
     );
 
     # Make sure cookies are kept through requests
     my $jar = HTTP::Cookies->new();
     $ua->cookie_jar($jar);
+
+    return $ua;
+}
+
+sub get_useragent {
+    my $opt = shift;
+
+    # Once the user agent object is created, we will always return the same
+    # instance, regardless of different options!
+    my $ua = $stash->{agent};
+    if (! defined $ua) {
+        $ua = init_useragent($opt);
+    }
 
     return $ua;
 }
