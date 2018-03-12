@@ -7,6 +7,7 @@ use warnings;
 use Encode ();
 use HTTP::Cookies ();
 use IO::Socket::SSL;
+use IPC::Run qw(run timeout);
 use JSON ();
 use LWP::UserAgent ();
 use Test::Cukes;
@@ -15,12 +16,12 @@ use Test::More;
 use Time::Piece;
 use URI ();
 
-our $VERSION = "0.10";
+our $VERSION = "0.20";
 
 use constant {
     DEFAULT_TIMEOUT       => 60,
     DEFAULT_MAX_REDIRECTS => 5,
-    DEFAULT_USER_AGENT    => qq{http-cuke/0.10},
+    DEFAULT_USER_AGENT    => qq{http-cuke/0.20},
 };
 
 our $stash;
@@ -538,6 +539,23 @@ Then qr{the json value for the "(.+)" key should be (greater|lesser) than "(.+)"
         or fail("JSON key ${key} is not $rel than $cmp_val (assertion `$key_value $rel than $cmp_val' is false)"
             . "Exception: $@\n"
             . "Content: " . $content);
+};
+
+Then qr{the page should validate according to the external script "([^"]+)"}, sub {
+    my $external_script = $1;
+    my $page = "" . $stash->{res}->content;
+    my $stdout;
+    my $stderr;
+
+    # $ENV{IPCRUNDEBUG} = "details";
+    my @cmd = ($external_script);
+    run \@cmd, '<', \$page, '>', \$stdout, '>', \$stderr, timeout(10);
+
+    my $exit_code = $?;
+    my $exit_err = $!;
+
+    diag($stderr) if $stderr;
+    ok($exit_code == 0, "External script returned $exit_code $exit_err");
 };
 
 Then qr{the json value for the "(.+)" key should be a timestamp within (\d+) (hours?|minutes?|seconds?|days?)}, sub {

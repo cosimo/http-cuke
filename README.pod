@@ -223,6 +223,14 @@ A super-cheap hack, but it works for now. Examples:
 
 =item C<Then the page should be a valid JSON document>
 
+=item C<Then the page should validate according to the external script "(.+)">
+
+In this case, the specified external script, which must be executable,
+will be invoked with the content of the downloaded document as STDIN stream.
+
+The script must exit with code zero (e.g. C<exit 0>) if the document is valid.
+Any other exit code will be interpreted as if the document failed validation.
+
 =item C<Then the json document should have a "(.+)" key>
 
 =item C<Then the json value for the "(.+)" key should not be empty>
