@@ -3,6 +3,7 @@ package Test::Cukes::HTTP;
 use 5.014;
 use strict;
 use warnings;
+use utf8;
 
 use Encode ();
 use HTTP::Cookies ();
@@ -16,14 +17,15 @@ use Test::More;
 use Time::Piece;
 use URI ();
 
-our $VERSION = "0.20";
+our $VERSION = "0.21";
 
 use constant {
     DEFAULT_TIMEOUT       => 60,
     DEFAULT_MAX_REDIRECTS => 5,
-    DEFAULT_USER_AGENT    => qq{http-cuke/0.20},
+    DEFAULT_USER_AGENT    => qq{http-cuke/0.21},
 };
 
+our $json = JSON->new()->utf8();
 our $stash;
 our $useragent_options = {};
 
@@ -239,6 +241,43 @@ sub _is_internal_error_response {
     return ! $is_success && $internal_response;
 }
 
+# Defines how returned values are to be displayed in the console output
+sub _display_value {
+  my $val = shift;
+  my $display_val;
+
+  if (! ref $val) {
+    if (! defined $val) {
+      $display_val = "<undef>";
+    }
+    elsif ($val eq "") {
+      $display_val = "<blank>";
+    }
+    else {
+      $display_val = $val;
+    }
+  }
+  else {
+    if (ref $val eq "ARRAY") {
+      $display_val = $json->encode($val);
+      if (length($display_val) > 100) {
+        $display_val = substr($display_val, 0, 99) . "…";
+      }
+    }
+    elsif (ref $val eq "HASH") {
+      $display_val = $json->encode($val);
+      if (length($display_val) > 100) {
+        $display_val = substr($display_val, 0, 99) . "…";
+      }
+    }
+    else {
+      $display_val = $val;
+    }
+  }
+
+  return $display_val;
+}
+
 Given qr{(?:i will follow) a max of (\d+) redirects}, sub {
     my $ua = get_useragent();
     $ua->max_redirect($1);
@@ -409,7 +448,6 @@ Then qr{the page (?:is|should be) a valid JSON document}, sub {
     my $content = $stash->{res}->content;
     my $is_json = 0;
     eval {
-        my $json = JSON->new();
         my $data = $json->decode($content);
         $is_json = (ref $data eq "ARRAY") || (ref $data eq "HASH");
     };
@@ -434,7 +472,6 @@ Then qr{the json document should have an? "(.+)" key}, sub {
     my $content = $stash->{res}->content;
     my $json_has_key = 0;
     eval {
-        my $json = JSON->new();
         my $data = $json->decode($content);
         $json_has_key = Test::Cukes::JSON::document_has_key($data, $required_key);
     };
@@ -449,11 +486,10 @@ Then qr{the json value for the "(.+)" key should not be empty}, sub {
     my $content = $stash->{res}->content;
     my $key_value;
     eval {
-        my $json = JSON->new()->utf8(1);
         my $data = $json->decode($content);
         $key_value = Test::Cukes::JSON::key_value($data, $key);
     };
-    my $display_val = $key_value || "";
+    my $display_val = _display_value($key_value);
     isnt($key_value => undef, "  JSON key ${key} has a value (`$display_val')")
         or fail("JSON key ${key} has an undefined value.\n"
             . "Exception: $@\n"
@@ -470,14 +506,14 @@ Then qr{the json value for the "(.+)" key should be "(.+)"}, sub {
     my $content = $stash->{res}->content;
     my $key_value;
     eval {
-        my $json = JSON->new()->utf8(1);
         my $data = $json->decode($content);
         $key_value = Test::Cukes::JSON::key_value($data, $key);
     };
+    my $display_val = _display_value($key_value);
     is($key_value => $expected_value,
-        "  JSON key ${key} should have value `$expected_value' (has `$key_value')")
+        "  JSON key ${key} should have value `$expected_value' (has `$display_val')")
         or fail("JSON key ${key} has a value that is *not* `$expected_value' "
-            . "(has `$key_value').\n"
+            . "(has `$display_val').\n"
             . "Exception: $@\n"
             . "Content: " . $content);
 };
@@ -493,7 +529,6 @@ Then qr{the json value for the "(.+)" key should( not)? match "(.+)"}, sub {
     my $content = $stash->{res}->content;
     my $key_value;
     eval {
-        my $json = JSON->new()->utf8(1);
         my $data = $json->decode($content);
         $key_value = Test::Cukes::JSON::key_value($data, $key);
     };
@@ -520,7 +555,6 @@ Then qr{the json value for the "(.+)" key should be (greater|lesser) than "(.+)"
     my $content = $stash->{res}->content;
     my $key_value;
     eval {
-        my $json = JSON->new()->utf8(1);
         my $data = $json->decode($content);
         $key_value = Test::Cukes::JSON::key_value($data, $key);
     };
@@ -577,7 +611,6 @@ Then qr{the json value for the "(.+)" key should be a timestamp within (\d+) (ho
     my $content = $stash->{res}->content;
     my $ts_value;
     eval {
-        my $json = JSON->new()->utf8(1);
         my $data = $json->decode($content);
         $ts_value = Test::Cukes::JSON::key_value($data, $key);
     } or do {
