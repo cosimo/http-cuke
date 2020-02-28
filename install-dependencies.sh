@@ -1,7 +1,8 @@
 #!/bin/bash
 
 PACKAGES="
-	libany-moose-perl
+	libmoo-perl
+	libmoox-late-perl
 	libcarp-assert-perl
 	libfile-slurp-perl
 	libhttp-cookies-perl

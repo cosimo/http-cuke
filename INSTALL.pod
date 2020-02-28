@@ -19,9 +19,16 @@ L<LWP::UserAgent>
 
 =item *
 
-L<Any::Moose>
+L<Moo>
 
-(C<libany-moose-perl>)
+(C<libmoo-perl>)
+
+=item *
+
+L<MooX::late>
+
+(C<libmoox-late-perl>)
+
 
 =item *
 

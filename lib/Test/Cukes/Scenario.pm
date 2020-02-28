@@ -1,10 +1,11 @@
 package Test::Cukes::Scenario;
-use Any::Moose;
+use Moo;
+use MooX::late;
 
 has name => (
     is => "rw",
     required => 1,
-    isa => "Str"
+    isa => "Str",
 );
 
 has steps => (
@@ -37,5 +38,5 @@ sub BUILDARGS {
 }
 
 __PACKAGE__->meta->make_immutable;
-no Any::Moose;
+no Moo;
 1;

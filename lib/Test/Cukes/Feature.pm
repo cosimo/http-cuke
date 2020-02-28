@@ -1,5 +1,6 @@
 package Test::Cukes::Feature;
-use Any::Moose;
+use Moo;
+use MooX::late;
 
 use Test::Cukes::Scenario;
 
@@ -52,5 +53,5 @@ sub BUILDARGS {
 }
 
 __PACKAGE__->meta->make_immutable;
-no Any::Moose;
+no Moo;
 1;
